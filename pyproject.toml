@@ -1,0 +1,34 @@
+[project]
+name = "dust_utils" # 建议改成你的包名，避免冲突
+version = "0.1.0" # 初始版本，可随时改
+description = "步尘的个人公共工具库，包含AI、文档、日志等模块"
+readme = "README.md" # 可选，如果有 README 文件
+authors = [{ name = "步尘", email = "zsq1364202622@gmail.com" }]
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+
+# 主依赖：所有项目基本都会用到的第三方库
+dependencies = ["requests", "colorama", "wcwidth"]
+
+# 可选依赖：仅在特定功能下需要的库，按需安装
+[project.optional-dependencies]
+ai = ["openai>=2.14.0", "esprima", "mermaid-py"]
+mysql = [
+    "pymysql", # 或指定具体版本，如 "pymysql==1.1.1"
+]
+wx = ["wxPython"]
+md = ['markdown-it-py', 'python-docx', 'pillow']
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false
+
+[tool.uv.workspace]
+members = [
+    "dust_utils",
+]
