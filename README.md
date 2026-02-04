@@ -1,49 +1,34 @@
-# 个人公共工具库 dust_utils
-
-## 更新与安装方式
-
-### 更新 common_utils 库本身（在 common_utils 目录下操作）
-- **修改 .py 文件、docstring 等**：保存后立即在所有项目中生效，无需重新安装。
-- **重新安装/更新**（仅在需要时执行）：
-  ```bash
-  pip install -e .                  # 基础安装
-  ```
-- **修改 pyproject.toml** 后（如新增或调整依赖）：
-需要在每个使用该功能的其他项目中，重新运行对应的安装命令
+# 个人公共工具库 dust-utils
 
 ## 虚拟环境推荐使用方式（强烈建议）
 每个项目应使用独立的虚拟环境，以避免依赖冲突和版本问题。
 - 创建虚拟环境
     ```bash
-    python -m venv venv 
+    uv init 
     ```
 - 激活虚拟环境
     - Windows
         ```bash
-        venv\Scripts\activate
-        ```
-    - macOS / Linux
-        ```bash
-        source venv/bin/activate
+        .venv\Scripts\activate
         ```
 - 退出虚拟环境
     ```bash
     deactivate
     ```
-## 安装 common_utils 库
-- 基础安装
+## 安装 dust-utils 库
+- git安装
+    - [core]删除后表示安装整个库，可改为指定模块的名称
+    - 模块名称在**pyproject.toml**下的**project.optional-dependencies**
     ```bash
-    pip install -e ../common_utils
+    uv add "dust-utils[core] @ git+https://github.com/StepDust/dust-utils.git"
     ```
-- 安装可选功能
-    - AI 功能
-        ```bash
-        pip install -e ../common_utils[ai]
-        ```
-    - wx和AI功能
-        ```bash
-        pip install -e ../common_utils[wx,ai]
-        ```
+- 本地安装
+    - "../dust-utils[core]"是本地路径
+    - [core]删除后表示安装整个库，可改为指定模块的名称
+    - 模块名称在**pyproject.toml**下的**project.
+    ```bash
+    uv add --editable "../dust-utils[core]"
+    ```
 >  <br>
 > ./common_utils，只是一个指向 common_utils 目录的路径
 > <br><br>
@@ -116,3 +101,9 @@ from common_utils.aiUtils.ai_chat import AIChat
 
 
 
+# 常用uv命令
+
+### 安装 pyproject.toml 中的依赖
+```
+uv sync
+```
