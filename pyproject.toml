@@ -1,5 +1,5 @@
 [project]
-name = "dust-utils" # 建议改成你的包名，避免冲突
+name = "dust_utils" # 建议改成你的包名，避免冲突
 version = "0.1.0" # 初始版本，可随时改
 description = "步尘的个人公共工具库，包含AI、文档、日志等模块"
 readme = "README.md" # 可选，如果有 README 文件
