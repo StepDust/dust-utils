@@ -1,5 +1,5 @@
 """
-common_utils
+dust-utils
 通用工具库（按需加载）
 """
 
@@ -11,3 +11,4 @@ from .logger_setup import setup_logger
 __all__ = [
     "setup_logger",
 ]
+ 
