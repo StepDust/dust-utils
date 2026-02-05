@@ -4,8 +4,12 @@
 每个项目应使用独立的虚拟环境，以避免依赖冲突和版本问题。
 - 创建虚拟环境
     ```bash
-    uv init 
+    uv venv
     ```
+- 初始化环境
+   ```bash
+   uv init
+   ```
 - 激活虚拟环境
     - Windows
         ```bash
@@ -15,6 +19,7 @@
     ```bash
     deactivate
     ```
+
 ## 安装 dust-utils 库
 - git安装
     - [core]删除后表示安装整个库，可改为指定模块的名称
@@ -29,14 +34,6 @@
     ```bash
     uv add --editable "../dust-utils[core]"
     ```
->  <br>
-> ./common_utils，只是一个指向 common_utils 目录的路径
-> <br><br>
-
-## 安装其他项目依赖
-```bash
-pip install -r requirements.txt
-```
 
 ## 输出解释器路径
 ```bash
@@ -48,12 +45,12 @@ python -c "import sys; print(sys.version)"
 ```
 
 ## 注意事项
-- 修改 common_utils 源码后，所有项目自动使用最新代码（得益于 editable 模式）。
+- 修改 dust_utils 源码后，所有项目自动使用最新代码（得益于 editable 模式）。
 - 只有 pyproject.toml 的依赖发生变化时，才需在相关项目中重新运行安装命令。
 - 建议按需导入模块，例如：
 ```python
-from common_utils.logger_setup import setup_logger
-from common_utils.aiUtils.ai_chat import AIChat
+from dust_utils.logger_setup import setup_logger
+from dust_utils.ai_utils.ai_chat import AIChat
 ```
 这样可以避免加载不必要的第三方库。
 

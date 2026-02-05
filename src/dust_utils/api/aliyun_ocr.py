@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 # 禁用所有代理设置，确保直接连接
 os.environ.pop("HTTP_PROXY", None)
 os.environ.pop("HTTPS_PROXY", None)
+os.environ.pop("http_proxy", None)
+os.environ.pop("https_proxy", None)
+os.environ["NO_PROXY"] = "*"
 os.environ.pop("ALL_PROXY", None)
 
 

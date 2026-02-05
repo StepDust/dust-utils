@@ -104,6 +104,7 @@ class ApiUtils:
             )
         )
 
+    @staticmethod
     def download_file(download_base_urls, file_url, file_path, desc="文件"):
         """
         从多个服务器的指定URL下载文件并保存到本地。

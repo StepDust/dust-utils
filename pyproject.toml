@@ -22,11 +22,11 @@ mysql = [
     "pymysql", # 或指定具体版本，如 "pymysql==1.1.1"
 ]
 wx = ["wxPython"]
-md = ['markdown-it-py', 'python-docx', 'pillow']
+file = ['markdown-it-py', 'python-docx', 'pillow']
 
 [tool.setuptools.packages.find]
-where = ["src"]
-namespaces = false
+where = ["src"] # 源码目录
+namespaces = false # 如果不使用命名空间包，设为 false
 
 [tool.uv.workspace]
 members = [
