@@ -22,7 +22,7 @@ mysql = [
     "pymysql", # 或指定具体版本，如 "pymysql==1.1.1"
 ]
 wx = ["wxPython"]
-file = ['markdown-it-py', 'python-docx', 'pillow']
+md = ['markdown-it-py', 'python-docx', 'pillow']
 
 [tool.setuptools.packages.find]
 where = ["src"] # 源码目录

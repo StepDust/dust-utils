@@ -1,4 +1,4 @@
-# 个人公共工具库 dust-utils
+# 个人公共工具库 dust_utils
 
 ## 虚拟环境推荐使用方式（强烈建议）
 每个项目应使用独立的虚拟环境，以避免依赖冲突和版本问题。
@@ -20,19 +20,19 @@
     deactivate
     ```
 
-## 安装 dust-utils 库
+## 安装 dust_utils 库
 - git安装
     - [core]删除后表示安装整个库，可改为指定模块的名称
     - 模块名称在**pyproject.toml**下的**project.optional-dependencies**
     ```bash
-    uv add "dust-utils[core] @ git+https://github.com/StepDust/dust-utils.git"
+    uv add "dust_utils[core] @ git+https://github.com/StepDust/dust_utils.git"
     ```
 - 本地安装
-    - "../dust-utils[core]"是本地路径
+    - "../dust_utils[core]"是本地路径
     - [core]删除后表示安装整个库，可改为指定模块的名称
     - 模块名称在**pyproject.toml**下的**project.
     ```bash
-    uv add --editable "../dust-utils[core]"
+    uv add --editable "../dust_utils[core]"
     ```
 
 ## 输出解释器路径

@@ -1,8 +1,3 @@
-from docx import Document
-from docx.oxml.ns import qn
-from docx.text.paragraph import Paragraph
-from docx.table import _Cell
-from docx.enum.text import WD_COLOR_INDEX
 import logging
 import re
 
@@ -26,6 +21,8 @@ class WordUtils:
             params (dict): 形如{{var}}，变量替换字典，键为变量名，值为替换值
         """
         logger.info(f"开始替换文档变量\n路径： {docx_path}\n变量：{params}")
+        from docx import Document
+
         doc = Document(docx_path)
 
         # 处理普通段落
@@ -42,12 +39,12 @@ class WordUtils:
         logger.success(f"替换文档变量完成\n路径： {docx_path}")
 
     @staticmethod
-    def _process_cell(cell: _Cell, params: dict):
+    def _process_cell(cell: "_Cell", params: dict):
         for p in cell.paragraphs:
             WordUtils._process_paragraph(p, params)
 
     @staticmethod
-    def _process_paragraph(p: Paragraph, params: dict):
+    def _process_paragraph(p: "Paragraph", params: dict):
         """
         替换段落中的{{var}}为对应的值
 
@@ -127,6 +124,8 @@ class WordUtils:
         if rFonts is None:
             return
 
+        from docx.oxml.ns import qn
+
         east_asia_font = rFonts.get(qn("w:eastAsia"))
         if not east_asia_font:
             return
@@ -141,6 +140,8 @@ class WordUtils:
         返回 WD_COLOR_INDEX 枚举或 None
         """
         try:
+            from docx.enum.text import WD_COLOR_INDEX
+
             val = run.font.highlight_color
             # 如果不是合法枚举，返回 None
             if val in WD_COLOR_INDEX.__members__.values():

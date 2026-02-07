@@ -1,20 +1,7 @@
-from docx import Document
-from docx.shared import Inches
-from urllib.parse import unquote
-from markdown_it import MarkdownIt
-import base64
 import os
 import json
 import sys
-import tempfile
 import logging
-import requests
-from docx.shared import Pt, RGBColor
-from docx.oxml.ns import qn
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.text import WD_LINE_SPACING
-from docx.oxml import OxmlElement
-import re
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +18,8 @@ class MarkdownAstParser:
         """
         初始化 Markdown 解析器实例
         """
-        self.md = MarkdownIt()
+        # 延迟初始化 MarkdownIt，只有在 parse 时才导入并创建实例
+        self.md = None
 
     def parse(self, md_text: str):
         """
@@ -44,6 +32,10 @@ class MarkdownAstParser:
             list: 解析后的 token 列表
         """
         logger.info("正在解析Markdown文档结构...")
+        if self.md is None:
+            from markdown_it import MarkdownIt
+
+            self.md = MarkdownIt()
         return self.md.parse(md_text)
 
 
@@ -84,6 +76,29 @@ class MdToDocx:
         """
         self.parser = MarkdownAstParser()
 
+    def _ensure_docx(self):
+        """
+        延迟导入 python-docx 相关模块并绑定到实例属性，避免模块导入期间的开销。
+        """
+        if getattr(self, "_docx_loaded", False):
+            return
+
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.oxml.ns import qn
+        from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+        from docx.oxml import OxmlElement
+
+        self.Document = Document
+        self.Inches = Inches
+        self.Pt = Pt
+        self.RGBColor = RGBColor
+        self.qn = qn
+        self.WD_ALIGN_PARAGRAPH = WD_ALIGN_PARAGRAPH
+        self.WD_LINE_SPACING = WD_LINE_SPACING
+        self.OxmlElement = OxmlElement
+        self._docx_loaded = True
+
     def convert(self, md_text: str, output_path: str, styles: list = None):
         """
         执行转换流程：Markdown -> Word
@@ -93,10 +108,13 @@ class MdToDocx:
             output_path (str): 输出 Word 文档的路径 (.docx)
             styles (list, optional): 自定义样式配置列表. Defaults to None.
         """
+        # 确保按需加载 python-docx
+        self._ensure_docx()
+
         if os.path.exists(output_path):
-            self.doc = Document(output_path)
+            self.doc = self.Document(output_path)
         else:
-            self.doc = Document()
+            self.doc = self.Document()
 
         self._enable_doc_grid()
 
@@ -201,6 +219,13 @@ class MdToDocx:
             paragraph (docx.text.paragraph.Paragraph, optional): 目标段落. Defaults to None.
         """
 
+        # 延迟导入 requests/base64/tempfile 等
+        self._ensure_docx()
+        from urllib.parse import unquote
+        import requests
+        import base64
+        import tempfile
+
         # ---------- 1️⃣ 获取图片 ----------
         if src.startswith("http"):
             src = unquote(src)
@@ -233,16 +258,23 @@ class MdToDocx:
 
         # 🔥 核心：列表层级缩进
         list_level = self._get_list_level(paragraph)
-        list_indent = Inches(0.25 * (list_level + 1))
+        list_indent = self.Inches(0.25 * (list_level + 1))
 
         available_width = page_width - margin_left - margin_right - list_indent
 
         # 防御
         if isinstance(available_width, int):
-            available_width = Inches(available_width / 914400)
+            available_width = self.Inches(available_width / 914400)
 
-        if available_width.inches < 1:
-            available_width = Inches(1)
+        try:
+            inches_val = available_width.inches
+        except Exception:
+            inches_val = None
+
+        if inches_val is None or (
+            isinstance(inches_val, (int, float)) and inches_val < 1
+        ):
+            available_width = self.Inches(1)
 
         # ---------- 4️⃣ 插入 ----------
         # 如果段落已有多个 run，先追加换行
@@ -375,6 +407,8 @@ class MdToDocx:
             name = style.name.lower()
             if name.startswith("list"):
                 # 从样式名中提取数字作为层级
+                import re
+
                 match = re.search(r"(\d+)", name)
                 return int(match.group(1)) - 1 if match else 0
 
@@ -397,6 +431,8 @@ class MdToDocx:
             paragraph (docx.text.paragraph.Paragraph): 目标段落
             style_name (str): 样式配置名称
         """
+        # 确保 docx 系列符号已按需加载
+        self._ensure_docx()
         style = self.styles.get(style_name)
         if not style:
             return
@@ -408,47 +444,49 @@ class MdToDocx:
         pPr = paragraph._element.get_or_add_pPr()
 
         # ---- textAlignment = auto（与人工文档一致）
-        text_align = pPr.find(qn("w:textAlignment"))
+        text_align = pPr.find(self.qn("w:textAlignment"))
         if text_align is None:
-            text_align = OxmlElement("w:textAlignment")
+            text_align = self.OxmlElement("w:textAlignment")
             pPr.append(text_align)
-        text_align.set(qn("w:val"), "auto")
+        text_align.set(self.qn("w:val"), "auto")
 
         # ---- snapToGrid = 1（关键：启用基线网格）
-        snap = pPr.find(qn("w:snapToGrid"))
+        snap = pPr.find(self.qn("w:snapToGrid"))
         if snap is None:
-            snap = OxmlElement("w:snapToGrid")
+            snap = self.OxmlElement("w:snapToGrid")
             pPr.append(snap)
-        snap.set(qn("w:val"), "1")
+        snap.set(self.qn("w:val"), "1")
 
         # ---- 中文排版辅助属性（不影响西文）
         for tag in ["w:kinsoku", "w:overflowPunct", "w:adjustRightInd"]:
-            if pPr.find(qn(tag)) is None:
-                pPr.append(OxmlElement(tag))
+            if pPr.find(self.qn(tag)) is None:
+                pPr.append(self.OxmlElement(tag))
 
         # ---- 对齐方式
         if "align" in style:
             align_map = {
-                "left": WD_ALIGN_PARAGRAPH.LEFT,
-                "center": WD_ALIGN_PARAGRAPH.CENTER,
-                "right": WD_ALIGN_PARAGRAPH.RIGHT,
-                "justify": WD_ALIGN_PARAGRAPH.JUSTIFY,
+                "left": self.WD_ALIGN_PARAGRAPH.LEFT,
+                "center": self.WD_ALIGN_PARAGRAPH.CENTER,
+                "right": self.WD_ALIGN_PARAGRAPH.RIGHT,
+                "justify": self.WD_ALIGN_PARAGRAPH.JUSTIFY,
             }
-            p_format.alignment = align_map.get(style["align"], WD_ALIGN_PARAGRAPH.LEFT)
+            p_format.alignment = align_map.get(
+                style["align"], self.WD_ALIGN_PARAGRAPH.LEFT
+            )
 
         # ---- 行距（不固定倍数）
         if "line_spacing" in style:
             p_format.line_spacing = style["line_spacing"]
-            p_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+            p_format.line_spacing_rule = self.WD_LINE_SPACING.MULTIPLE
 
-        p_format.space_before = Pt(style.get("space_before", 0))
-        p_format.space_after = Pt(style.get("space_after", 0))
+        p_format.space_before = self.Pt(style.get("space_before", 0))
+        p_format.space_after = self.Pt(style.get("space_after", 0))
 
         # =====================================================
         # 2️⃣ 缩进规则
         # =====================================================
         if "first_line_indent" in style:
-            p_format.first_line_indent = Pt(
+            p_format.first_line_indent = self.Pt(
                 style.get("font_size", 11) * style["first_line_indent"]
             )
 
@@ -470,28 +508,28 @@ class MdToDocx:
             # ---- 字体四槽位（ascii / hAnsi / eastAsia / cs），
             # 解决“中文字体不生效”问题
             rFonts = rPr.get_or_add_rFonts()
-            rFonts.set(qn("w:ascii"), font_name)
-            rFonts.set(qn("w:hAnsi"), font_name)
-            rFonts.set(qn("w:eastAsia"), font_name)
-            rFonts.set(qn("w:cs"), font_name)
+            rFonts.set(self.qn("w:ascii"), font_name)
+            rFonts.set(self.qn("w:hAnsi"), font_name)
+            rFonts.set(self.qn("w:eastAsia"), font_name)
+            rFonts.set(self.qn("w:cs"), font_name)
 
             # ---- 语言环境
-            lang = rPr.find(qn("w:lang"))
+            lang = rPr.find(self.qn("w:lang"))
             if lang is None:
-                lang = OxmlElement("w:lang")
+                lang = self.OxmlElement("w:lang")
                 rPr.append(lang)
-            lang.set(qn("w:val"), "en-US")
-            lang.set(qn("w:eastAsia"), "zh-CN")
+            lang.set(self.qn("w:val"), "en-US")
+            lang.set(self.qn("w:eastAsia"), "zh-CN")
 
             # ---- 基础样式
-            font.size = Pt(font_size)
+            font.size = self.Pt(font_size)
             font.bold = style.get("bold", False)
             font.italic = style.get("italic", False)
             font.underline = style.get("underline", False)
 
             if "font_color" in style:
                 c = style["font_color"].lstrip("#")
-                font.color.rgb = RGBColor(
+                font.color.rgb = self.RGBColor(
                     int(c[0:2], 16),
                     int(c[2:4], 16),
                     int(c[4:6], 16),
@@ -503,6 +541,8 @@ class MdToDocx:
         - 始终确保 w:type="lines"
         - 不强制 linePitch，由 Word 自动计算
         """
+        # 确保 docx 相关对象已加载
+        self._ensure_docx()
         section = self.doc.sections[0]
         sectPr = section._sectPr
 
@@ -511,13 +551,13 @@ class MdToDocx:
         if docGrids:
             docGrid = docGrids[0]
         else:
-            docGrid = OxmlElement("w:docGrid")
+            docGrid = self.OxmlElement("w:docGrid")
             sectPr.append(docGrid)
 
         # ✅ 核心：始终设置为 lines
-        docGrid.set(qn("w:type"), "lines")
+        docGrid.set(self.qn("w:type"), "lines")
 
         # 可选：显式关闭字符网格（推荐）
-        docGrid.set(qn("w:charSpace"), "0")
+        docGrid.set(self.qn("w:charSpace"), "0")
 
     # endregion
